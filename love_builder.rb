@@ -8,7 +8,7 @@ if ARGV.length == 0
     print "\tUsage: ./love_builder.rb [archive] love_file_location\n"
     print "\tThis builds a .love file, and is the default command.\n"
     print "\n"
-    print "\tlove_file_location - The location where you want the .love to be put.\n"
+    print "\tlove_file_location - The location where you want the .love to be put. (Having a .love extension for this path is optional)\n"
     print "\n"
     print "merge:\n"
     print "\tUsage ./love_builder.rb merge executable_location\n"
