@@ -27,13 +27,17 @@ def merge
     
     if ARGV[1].end_with? '.app'
         name = File.basename(ARGV[1], '.app')
-        `cat #{ARGV[1]}/Contents/MacOS/love temp.love > #{ARGV[1]}/Contents/MacOS/temp`
+        `cat #{ARGV[1]}/Contents/MacOS/love temp.love > #{ARGV[1]}/Contents/MacOS/temp` # if we don't using a temp file, it seems to not run properly
+        fail "Merge was unsuccessful.\n" if $?.exitstatus != 0
         File.rename("#{ARGV[1]}/Contents/MacOS/temp", "#{ARGV[1]}/Contents/MacOS/love")
+        
         print "Making file executable...\n"
-        `chmod a+x #{ARGV[1]}/Contents/MacOS/love`
+        `chmod a+x #{ARGV[1]}/Contents/MacOS/love` # if we don't do this, it won't run properly (not executable)
     else
         `cat #{ARGV[1]} temp.love > temp`
+        fail "Merge was unsuccessful.\n" if $?.exitstatus != 0
         File.rename('temp', ARGV[1])
+        
         print "Making file executable...\n"
         `chmod a+x #{ARGV[1]}`
     end
