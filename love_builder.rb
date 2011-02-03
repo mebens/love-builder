@@ -1,5 +1,49 @@
 #!/usr/bin/env ruby
 
+# redefining of fail for slightly more friendly messaging
+def fail(msg, code = 1)
+    print "Error: #{msg}#{msg.end_with?("\n") ? '' : "\n"}"
+    exit code
+end
+
+def archive(name)
+    file = name
+    file += '.love' unless file.end_with? '.love'
+    print "Archiving...\n"
+    `zip -r #{file} *`
+    
+    if $?.exitstatus == 0
+        print "#{name}.love created successfully.\n"
+    else
+        fail "An error occurred file creating the file.\n"
+    end
+end
+
+def merge
+    fail "Please provide a executable location.\n" unless ARGV.length == 2
+    fail "The location you specified for the executable does not exist. (#{ARGV[1]})\n" unless File.exists? ARGV[1]
+    archive('temp')
+    print "Merging...\n"
+    
+    if ARGV[1].end_with? '.app'
+        name = File.basename(ARGV[1], '.app')
+        `cat #{ARGV[1]}/Contents/MacOS/love temp.love > #{ARGV[1]}/Contents/MacOS/temp`
+        File.rename("#{ARGV[1]}/Contents/MacOS/temp", "#{ARGV[1]}/Contents/MacOS/love")
+        print "Making file executable...\n"
+        `chmod a+x #{ARGV[1]}/Contents/MacOS/love`
+    else
+        `cat #{ARGV[1]} temp.love > temp`
+        File.rename('temp', ARGV[1])
+        print "Making file executable...\n"
+        `chmod a+x #{ARGV[1]}`
+    end
+    
+    fail "Merge was unsuccessful.\n" if $?.exitstatus != 0
+    print "Deleting temp.love...\n"
+    File.delete('temp.love')
+    print "Merged executable created successfully.\n"
+end
+
 if ARGV.length == 0
     print "Usage: ./love_builder.rb [archive|merge]\n"
     print "Make sure you are in the project folder when using this program.\n"
@@ -18,72 +62,17 @@ if ARGV.length == 0
     exit 1
 end
 
-unless File.exists? 'main.lua'
-    print "Directory does not contain a main.lua file.\n"
-    exit 1
-end
+fail "Directory does not contain a main.lua file.\n" unless File.exists? 'main.lua'
 
-def archive(name)
-    file = name
-    file += '.love' unless file.end_with? '.love'
-    print "Archiving...\n"
-    `zip -r #{file} *`
-    
-    if $?.exitstatus == 0
-        print "#{name}.love created successfully.\n"
+if ARGV[0] == 'archive' or ARGV[0] != 'merge'
+    if ARGV[0] == 'archive' and ARGV[1]
+        archive(ARGV[1])
+    elsif ARGV[0]
+        archive(ARGV[0])
     else
-        print "An error occurred file creating the file.\n"
-    end
-end
-
-def merge
-    unless ARGV.length == 2
-        print "Please provide a executable location.\n"
+        print "Please give a name for the .love file.\n"
         exit 1
     end
-    
-    unless File.exists? ARGV[1]
-        print "The location you specified for the executable does not exist. (#{ARGV[1]})\n"
-        exit 1
-    end
-    
-    archive('temp')
-    print "Merging...\n"
-    
-    if ARGV[1].end_with? '.app'
-        name = File.basename(ARGV[1], '.app')
-        `cat #{ARGV[1]}/Contents/MacOS/love temp.love > #{ARGV[1]}/Contents/MacOS/temp`
-        File.rename("#{ARGV[1]}/Contents/MacOS/temp", "#{ARGV[1]}/Contents/MacOS/love")
-        print "Making file executable...\n"
-        `chmod a+x #{ARGV[1]}/Contents/MacOS/love`
-    else
-        `cat #{ARGV[1]} temp.love > temp`
-        File.rename('temp', ARGV[1])
-        print "Making file executable...\n"
-        `chmod a+x #{ARGV[1]}`
-    end
-    
-    if $?.exitstatus != 0
-        print "Merge was unsuccessful.\n"
-        exit 1
-    end
-    
-    print "Deleting temp.love...\n"
-    File.delete('temp.love')
-    print "Merged executable created successfully.\n"
-end
-
-if ARGV[0]
-    if ARGV[0] == 'archive' or ARGV[0] != 'merge'
-        if ARGV[0] == 'archive' and ARGV[1]
-            archive(ARGV[1])
-        elsif ARGV[0]
-            archive(ARGV[0])
-        else
-            print "Please give a name for the .love file.\n"
-            exit 1
-        end
-    elsif ARGV[0] == 'merge'
-        merge
-    end 
+elsif ARGV[0] == 'merge'
+    merge
 end
