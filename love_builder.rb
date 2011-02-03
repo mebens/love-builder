@@ -2,7 +2,7 @@
 
 # redefining of fail for slightly more friendly messaging
 def fail(msg, code = 1)
-    print "Error: #{msg}#{msg.end_with?("\n") ? '' : "\n"}"
+    STDERR.print "Error: #{msg}#{msg.end_with?("\n") ? '' : "\n"}"
     exit code
 end
 
