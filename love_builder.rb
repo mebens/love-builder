@@ -1,72 +1,80 @@
 #!/usr/bin/env ruby
 
 # redefining of fail for slightly more friendly messaging
-def fail(msg, code = 1)
-    STDERR.print "Error: #{msg}#{msg.end_with?("\n") ? '' : "\n"}"
+def err(msg, code = 1)
+    STDERR.puts "Error: #{msg}"
     exit code
+end
+
+def put(msg)
+    STDOUT.puts msg
 end
 
 def archive(name)
     file = name
     file += '.love' unless file.end_with? '.love'
-    print "Archiving...\n"
+    put 'Archiving...'
     `zip -r #{file} *`
     
     if $?.exitstatus == 0
-        print "#{name}.love created successfully.\n"
+        put "#{name}.love created successfully."
     else
-        fail "An error occurred file creating the file.\n"
+        err 'An error occurred file creating the file.'
     end
 end
 
 def merge
-    fail "Please provide a executable location.\n" unless ARGV.length == 2
-    fail "The location you specified for the executable does not exist. (#{ARGV[1]})\n" unless File.exists? ARGV[1]
+    err 'Please provide a executable location.' unless ARGV.length == 2
+    err "The location you specified for the executable does not exist. (#{ARGV[1]})" unless File.exists? ARGV[1]
     archive('temp')
-    print "Merging...\n"
+    put 'Merging...'
     
     if ARGV[1].end_with? '.app'
         name = File.basename(ARGV[1], '.app')
         `cat #{ARGV[1]}/Contents/MacOS/love temp.love > #{ARGV[1]}/Contents/MacOS/temp` # if we don't using a temp file, it seems to not run properly
-        fail "Merge was unsuccessful.\n" if $?.exitstatus != 0
+        err 'Merge was unsuccessful.' if $?.exitstatus != 0
         File.rename("#{ARGV[1]}/Contents/MacOS/temp", "#{ARGV[1]}/Contents/MacOS/love")
         
-        print "Making file executable...\n"
+        put 'Making file executable...'
         `chmod a+x #{ARGV[1]}/Contents/MacOS/love` # if we don't do this, it won't run properly (not executable)
     else
         `cat #{ARGV[1]} temp.love > temp`
-        fail "Merge was unsuccessful.\n" if $?.exitstatus != 0
+        err 'Merge was unsuccessful.' if $?.exitstatus != 0
         File.rename('temp', ARGV[1])
         
-        print "Making file executable...\n"
+        put 'Making file executable...'
         `chmod a+x #{ARGV[1]}`
     end
     
-    fail "Merge was unsuccessful.\n" if $?.exitstatus != 0
-    print "Deleting temp.love...\n"
+    err 'Merge was unsuccessful.' if $?.exitstatus != 0
+    put 'Deleting temp.love...'
     File.delete('temp.love')
-    print "Merged executable created successfully.\n"
+    put 'Merged executable created successfully.'
+end
+
+def new
+    fail 
 end
 
 if ARGV.length == 0
-    print "Usage: ./love_builder.rb [archive|merge]\n"
-    print "Make sure you are in the project folder when using this program.\n"
-    print "\n"
-    print "archive:\n"
-    print "\tUsage: ./love_builder.rb [archive] love_file_location\n"
-    print "\tThis builds a .love file, and is the default command.\n"
-    print "\n"
-    print "\tlove_file_location - The location where you want the .love to be put. (Having a .love extension for this path is optional)\n"
-    print "\n"
-    print "merge:\n"
-    print "\tUsage ./love_builder.rb merge executable_location\n"
-    print "\tThis creates a merged executable (on Mac this will be a .app file).\n"
-    print "\n"
-    print "\texecutable_location - The location of a copy of the love.app/love executable which can be used for your game. If you want to create Mac version you must end the path with the .app extension.\n"
+    put 'Usage: ./love_builder.rb [archive|merge]'
+    put 'Make sure you are in the project folder when using this program.'
+    put ''
+    put 'archive:'
+    put '\tUsage: ./love_builder.rb [archive] love_file_location'
+    put '\tThis builds a .love file, and is the default command.'
+    put ''
+    put '\tlove_file_location - The location where you want the .love to be put. (Having a .love extension for this path is optional)'
+    put ''
+    put 'merge:'
+    put '\tUsage ./love_builder.rb merge executable_location'
+    put '\tThis creates a merged executable (on Mac this will be a .app file).'
+    put ''
+    put '\texecutable_location - The location of a copy of the love.app/love executable which can be used for your game. If you want to create Mac version you must end the path with the .app extension.'
     exit 1
 end
 
-fail "Directory does not contain a main.lua file.\n" unless File.exists? 'main.lua'
+err 'Directory does not contain a main.lua file.' unless File.exists? 'main.lua'
 
 if ARGV[0] == 'archive' or ARGV[0] != 'merge'
     if ARGV[0] == 'archive' and ARGV[1]
@@ -74,7 +82,7 @@ if ARGV[0] == 'archive' or ARGV[0] != 'merge'
     elsif ARGV[0]
         archive(ARGV[0])
     else
-        print "Please give a name for the .love file.\n"
+        put 'Please give a name for the .love file.'
         exit 1
     end
 elsif ARGV[0] == 'merge'
